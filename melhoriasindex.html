@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capacitação Docente: Matific (Final)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos Gerais */
+        body { 
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            margin: 0; 
+            background-color: #f4f7f9; 
+            color: #333; 
+            line-height: 1.6; 
+        }
+        .container { display: flex; min-height: 100vh; }
+
+        /* Barra Lateral de Navegação */
+        .sidebar { width: 280px; background-color: #2c3e50; color: #ecf0f1; padding: 20px; flex-shrink: 0; }
+        .sidebar h2 { margin-top: 0; font-size: 1.4em; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .sidebar ul { list-style-type: none; padding: 0; }
+        .sidebar li a { display: flex; justify-content: space-between; align-items: center; color: #ecf0f1; text-decoration: none; padding: 12px 15px; border-radius: 5px; margin-bottom: 5px; transition: all 0.3s ease; cursor: pointer; }
+        .sidebar li a:hover, .sidebar li a.active { background-color: #3498db; }
+        .sidebar li a.disabled { color: #7f8c8d; background-color: transparent; cursor: not-allowed; pointer-events: none; }
+        .sidebar li a span { font-size: 0.9em; }
+
+        /* Barra de Progresso */
+        .progress-container {
+            width: 100%;
+            background-color: #55687d;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: white;
+            position: relative;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 30px;
+            background-color: #3498db;
+            border-radius: 5px;
+            transition: width 0.5s ease-in-out;
+        }
+        .progress-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        /* Conteúdo Principal */
+        .main-content { flex-grow: 1; padding: 40px; overflow-y: auto; scroll-behavior: smooth; }
+        .module { display: none; }
+        .module.active { display: block; }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        h3 { color: #3498db; margin-top: 30px; }
+        h4 { color: #2c3e50; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        blockquote { background-color: #ecf0f1; border-left: 5px solid #3498db; padding: 15px; margin: 20px 0; font-style: italic; }
+        .authors { font-size: 0.8em; color: #7f8c8d; margin-top: -15px; margin-bottom: 20px; }
+        .reading-section { background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        ul.checklist { list-style-type: none; padding-left: 0; }
+        ul.checklist li { margin-bottom: 8px; }
+        ul.checklist li::before { content: "☐"; margin-right: 10px; font-size: 1.2em; color: #3498db; }
+        
+        /* Estilos do Quiz e Certificado */
+        .quiz-container { background-color: #fff; padding: 20px; margin-top: 20px; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .question { margin-bottom: 15px; font-weight: bold; }
+        .options div { margin-bottom: 10px; }
+        .quiz-feedback { margin-top: 15px; padding: 10px; border-radius: 5px; font-weight: bold; }
+        .correct { background-color: #e8f5e9; color: #2e7d32; }
+        .incorrect { background-color: #ffebee; color: #c62828; }
+        .question-wrapper { padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 2px solid transparent; }
+        .question-correct { border-color: #2e7d32; background-color: #e8f5e9; }
+        .question-incorrect { border-color: #c62828; background-color: #ffebee; }
+        button { background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 1em; margin-top: 10px; transition: all 0.3s ease; }
+        button:hover { background-color: #2980b9; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        #student-name { width: 100%; padding: 10px; font-size: 1em; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; margin-bottom: 10px; }
+
+        /* Estilos do FAQ Acordeão */
+        .faq-question { background-color: #3498db; color: white; cursor: pointer; padding: 18px; width: 100%; border: none; text-align: left; outline: none; font-size: 1.1em; border-radius: 5px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease; }
+        .faq-question:hover, .faq-question.active { background-color: #2980b9; }
+        .faq-question::after { content: '\\2795'; font-size: 0.8em; color: #fff; }
+        .faq-question.active::after { content: "\\2796"; }
+        .faq-answer { padding: 0 18px; background-color: white; max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px; }
+        
+        /* Estilo do Template do Certificado */
+        .certificate-page { width: 1123px; height: 794px; padding: 40px; box-sizing: border-box; background-color: #ffffff; border: 1px solid #ccc; position: absolute; left: -9999px; top: 0; display: flex; flex-direction: column; font-family: 'Georgia', serif; }
+        #certificate-front { border: 10px double #1a2a47; align-items: center; text-align: center; }
+        .cert-header { width: 100%; border-bottom: 2px solid #ddd; padding-bottom: 20px; margin-bottom: 20px; text-align: center; }
+        .cert-logo img { width: 400px; height: auto; }
+        .cert-body { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
+        .cert-body h2 { font-size: 2.5em; color: #1a2a47; margin: 20px 0 10px 0; }
+        .cert-body p { font-size: 1.2em; margin: 10px 0; color: #333; }
+        .cert-body .cert-name { font-size: 3.8em; color: #3498db; margin: 15px 0; font-family: 'Garamond', 'Times New Roman', serif; font-weight: bold; }
+        .cert-body .course-name { font-weight: bold; font-size: 1.5em; margin-bottom: 5px; }
+        .cert-body .cert-subtitle { font-size: 1em; font-style: italic; color: #555; }
+        .cert-signatures { display: flex; justify-content: space-around; align-items: flex-start; width: 100%; margin-top: 40px; }
+        .signature-line { text-align: center; width: 450px; }
+        .signature-line .line { border-top: 1px solid #333; min-height: 40px; margin-bottom: 5px; }
+        .signature-line p { font-size: 1em; margin: 0; color: #333; }
+        .student-list { font-size: 0.7em; line-height: 1.4; font-family: Arial, sans-serif; text-align: center; margin-bottom: 5px; }
+        #certificate-back { padding: 50px; }
+        .cert-back-title { text-align: center; font-size: 1.8em; color: #1a2a47; border-bottom: 2px solid #ddd; padding-bottom: 15px; margin-bottom: 30px; }
+        .cert-modules strong { color: #1a2a47; font-size: 1.2em; }
+        .cert-modules ul { list-style-position: inside; padding-left: 0; columns: 2; -webkit-columns: 2; -moz-columns: 2; column-gap: 40px; margin-top: 10px; }
+        .cert-modules ul li { font-size: 1.1em; color: #333; margin-bottom: 15px; }
+        .cert-footer-back { text-align: center; margin-top: auto; padding-top: 30px; border-top: 1px solid #eee; }
+        .cert-details p { font-size: 1em; margin: 5px 0; color: #555; display: inline-block; margin: 0 20px; }
+        
+        /* Estilos da Janela Modal (Pop-up) */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 30px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 10px;
+            position: relative;
+            animation: fadeIn 0.5s;
+            max-height: 85vh;
+            overflow-y: scroll; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        .close-button { color: #aaa; position: absolute; top: 15px; right: 25px; font-size: 28px; font-weight: bold; }
+        .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
+        .modal-content h2 { margin-top: 0; color: #2c3e50; text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .modal-text-content { text-align: left; }
+        .modal-text-content h3 { border-bottom: 1px solid #eee; padding-bottom: 5px;}
+        .modal-text-content ul, .modal-text-content ol { padding-left: 25px; }
+        .modal-text-content p { margin-bottom: 1.2em; }
+        @keyframes fadeIn { from {opacity: 0} to {opacity: 1} }
+
+        @media (max-width: 768px) { .container { flex-direction: column; } .sidebar { width: 100%; height: auto; } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <nav class="sidebar">
+            <h2>Módulos do Curso</h2>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+                <div class="progress-label" id="progressLabel">0% Concluído</div>
+            </div>
+            <ul>
+                <li><a id="nav-mod1" class="active" onclick="showModule('mod1', this)">Módulo 1: Fundamentos</a></li>
+                <li><a id="nav-mod2" class="disabled" onclick="showModule('mod2', this)">Módulo 2: Gerenciamento <span>🔒</span></a></li>
+                <li><a id="nav-mod3" class="disabled" onclick="showModule('mod3', this)">Módulo 3: Análise de Dados <span>🔒</span></a></li>
+                <li><a id="nav-mod4" class="disabled" onclick="showModule('mod4', this)">Módulo 4: Integração <span>🔒</span></a></li>
+                <li><a id="nav-mod5" class="disabled" onclick="showModule('mod5', this)">Módulo 5: Projeto Aplicado <span>🔒</span></a></li>
+                <hr style="border-color: #34495e;">
+                <li><a id="nav-mod6" onclick="showModule('mod6', this)">Dúvidas Frequentes (FAQ)</a></li>
+                <li><a id="req-button">Requisitos do Sistema</a></li>
+                <li><a id="reset-progress" style="color: #e74c3c; cursor:pointer;">Limpar Progresso</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content" id="mainContent">
+            <div id="mod1" class="module active">
+                <h1>Módulo 1: Fundamentos e Primeiros Passos na Matific</h1>
+                <p class="authors">por GABRIELA FERNANDA RODRIGUES, GUSTAVO FIGUEIREDO, JOSÉ GONÇALVES DE OLIVEIRA NETO, LARISSA MARQUES DO NASCIMENTO, MARCELO LUIS FELICIO, TAIS DE TOLEDO BARROS AULER SALIBA</p>
+                <h3>Apresentação</h3><p>Bem-vindo(a)! Neste módulo, vamos compreender *por que* esta plataforma pode transformar suas aulas. Ao final, você saberá o que é a Matific, como funciona e já terá criado seu próprio ambiente de sala de aula digital.</p>
+                <h3>Situação-Problema</h3><blockquote>A professora Ana leciona para uma turma do 3º ano com 25 alunos de diferentes ritmos. Como ela poderia usar uma ferramenta digital para oferecer desafios adequados aos mais avançados e, ao mesmo tempo, reforçar os conceitos básicos para os que mais precisam?</blockquote>
+                <div class="reading-section">
+                    <button onclick="openModal('modal-mod1')">Abrir Conteúdo Principal de Leitura</button>
+                </div>
+                <h3>Checklist de Habilidades do Módulo</h3><ul class="checklist"><li>Entendo o que é gamificação e como a Matific a utiliza.</li><li>Sei a diferença entre a visão do aluno e o painel do professor.</li><li>Criei minha primeira turma e adicionei meus alunos.</li></ul>
+                <div class="quiz-container"><h3>Atividade Avaliativa (Mínimo 50% para avançar)</h3><div id="quiz-mod1"></div><button onclick="checkQuiz('mod1')">Verificar Respostas</button><div id="quiz-feedback-mod1" class="quiz-feedback" style="display:none;"></div></div>
+            </div>
+            
+            <div id="mod2" class="module"><h1>Módulo 2: Gerenciamento da Sala de Aula Digital</h1><h3>Apresentação</h3><p>Se no Módulo 1 nós abrimos a porta, agora vamos explorar a casa inteira. Você se tornará um(a) curador(a) de conteúdo, aprendendo a navegar na vasta biblioteca da Matific e a entregar a atividade certa para o aluno certo.</p><h3>Situação-Problema</h3><blockquote>A professora Ana cadastrou sua turma. Na próxima semana, ela precisa trabalhar a habilidade (EF03MA03). Como ela pode encontrar as melhores atividades para esse tópico e atribuí-las de forma diferenciada para a turma?</blockquote>
+                <div class="reading-section">
+                    <button onclick="openModal('modal-mod2')">Abrir Conteúdo Principal de Leitura</button>
+                </div>
+                <h3>Checklist de Habilidades do Módulo</h3><ul class="checklist"><li>Sei como navegar na biblioteca de atividades da Matific.</li><li>Consigo usar o filtro da BNCC para encontrar atividades específicas.</li><li>Sei como atribuir uma atividade para toda a turma.</li><li>Aprendi a criar grupos para diferenciar o ensino.</li></ul><div class="quiz-container"><h3>Atividade Avaliativa (Mínimo 50% para avançar)</h3><div id="quiz-mod2"></div><button onclick="checkQuiz('mod2')">Verificar Respostas</button><div id="quiz-feedback-mod2" class="quiz-feedback" style="display:none;"></div></div>
+            </div>
+
+            <div id="mod3" class="module"><h1>Módulo 3: Análise de Dados para uma Prática Pedagógica Eficaz</h1><h3>Apresentação</h3><p>Este é o módulo mais poderoso. Vamos aprender a transformar os dados de desempenho dos seus alunos em decisões pedagógicas inteligentes. Vamos deixar o "achismo" de lado e ensinar com evidências.</p><h3>Situação-Problema</h3><blockquote>Os relatórios da Professora Ana apontam que três alunos tiveram um desempenho muito baixo. Como ela pode usar os relatórios para entender *exatamente qual foi a dificuldade deles* e planejar uma intervenção?</blockquote>
+                <div class="reading-section">
+                    <button onclick="openModal('modal-mod3')">Abrir Conteúdo Principal de Leitura</button>
+                </div>
+                <h3>Checklist de Habilidades do Módulo</h3><ul class="checklist"><li>Sei onde encontrar os relatórios da Matific.</li><li>Consigo diferenciar os tipos de relatório (desempenho, progresso, etc.).</li><li>Entendo como usar os dados para identificar a dificuldade de um aluno.</li><li>Sei como usar a informação dos relatórios para planejar uma intervenção.</li></ul><div class="quiz-container"><h3>Atividade Avaliativa (Mínimo 50% para avançar)</h3><div id="quiz-mod3"></div><button onclick="checkQuiz('mod3')">Verificar Respostas</button><div id="quiz-feedback-mod3" class="quiz-feedback" style="display:none;"></div></div>
+            </div>
+
+            <div id="mod4" class="module"><h1>Módulo 4: Estratégias de Integração Curricular</h1><h3>Apresentação</h3><p>Já dominamos o "o quê" e o "porquê". Agora, vamos focar no "como". Como levar tudo isso para a sala de aula real, com recursos limitados? Este módulo é sobre estratégia e integração inteligente.</p><h3>Situação-Problema</h3><blockquote>A professora Ana tem apenas 6 tablets. Como ela poderia reestruturar sua aula para usar a Matific em um modelo de Rotação por Estações?</blockquote>
+                <div class="reading-section">
+                    <button onclick="openModal('modal-mod4')">Abrir Conteúdo Principal de Leitura</button>
+                </div>
+                <h3>Checklist de Habilidades do Módulo</h3><ul class="checklist"><li>Compreendo o que é o modelo de Rotação por Estações.</li><li>Entendo como funciona a Sala de Aula Invertida.</li><li>Consigo pensar em como adaptar um desses modelos à minha realidade.</li></ul><div class="quiz-container"><h3>Atividade Avaliativa (Mínimo 50% para avançar)</h3><div id="quiz-mod4"></div><button onclick="checkQuiz('mod4')">Verificar Respostas</button><div id="quiz-feedback-mod4" class="quiz-feedback" style="display:none;"></div></div>
+            </div>
+
+            <div id="mod5" class="module"><h1>Módulo 5: Projeto Aplicado - Planejando uma Sequência Didática</h1><h3>Apresentação</h3><p>Chegamos ao nosso último e mais importante módulo. Aqui, a teoria encontra a sua prática. Você irá sintetizar todo o seu aprendizado em um plano de aula concreto.</p>
+                <div class="reading-section">
+                    <button onclick="openModal('modal-mod5')">Abrir Conteúdo Principal de Leitura</button>
+                </div>
+                <h3>Checklist Final do Curso</h3><ul class="checklist"><li>Consigo configurar minha conta e minhas turmas na Matific.</li><li>Sei como atribuir atividades alinhadas à BNCC para diferentes grupos.</li><li>Sou capaz de usar os relatórios para entender o progresso dos alunos.</li><li>Conheço estratégias para integrar a Matific na minha rotina de aula.</li><li>Sinto-me confiante para criar um plano de aula completo usando a plataforma.</li></ul><div class="quiz-container"><h3>Conclusão do Curso e Emissão do Certificado</h3><p>Parabéns por concluir a sua formação! Para receber seu certificado digital, digite seu nome completo no campo abaixo e clique no botão para gerar e baixar o PDF.</p><input type="text" id="student-name" placeholder="Digite seu nome completo para o certificado"><button onclick="generateCertificate()">Gerar Certificado em PDF</button><div id="certificate-feedback" style="margin-top:10px; font-weight:bold;"></div></div>
+            </div>
+
+            <div id="mod6" class="module"><h1>Módulo Extra: Dúvidas Frequentes (FAQ)</h1><p>Consulte aqui as perguntas mais comuns sobre o uso da Matific no dia a dia. Clique em uma pergunta para ver a resposta.</p><div class="faq-container"><button class="faq-question">Preciso de internet para usar a Matific?</button><div class="faq-answer"><p>Sim. A Matific é uma plataforma online e requer uma conexão com a internet.</p></div><button class="faq-question">Um aluno esqueceu a senha. Como posso recuperá-la?</button><div class="faq-answer"><p>Vá em <strong>"Gestão de Turmas e Alunos"</strong>, selecione a turma, e lá você pode visualizar a senha ou gerar um novo "cartão de login".</p></div><button class="faq-question">Qual a diferença entre a "Ilha da Aventura" e as "Atividades Atribuídas"?</button><div class="faq-answer"><p>A <strong>Ilha da Aventura</strong> é a trilha de aprendizagem personalizada e autônoma. As <strong>Atividades Atribuídas</strong> são as que você, professor(a), seleciona com um objetivo pedagógico definido.</p></div><button class="faq-question">Posso usar a Matific em tablets e celulares?</button><div class="faq-answer"><p>Sim! A Matific é compatível com computadores (navegador) e tablets/smartphones (aplicativo).</p></div></div></div>
+        </main>
+    </div>
+
+    <div id="certificate-front" class="certificate-page">
+        <header class="cert-header"><div class="cert-logo"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAABFCAMAAAB4xXyWAAAASFBMVEX///8zMzMmJicoKCgYGBgREREbGxspKSkhISELCwsXFxcEBARPT09fX199fX0nJydISEg8PDxGRkZxcXFNTU1ZWVlQUFD4+Pj29vZiYmK+zsj4AAACFUlEQVR4nO3b226CMBQF0Ayi8yggAqL3f2+L2sJSCi1J6aTt/a5Hwll2k1ySAAAAAAAAAAAAAAAAAAAD8FJan4+X/XN+v9/vP/59v/513/f5vH/Xp1//vf7j+32/P22/9/3/8ff7L/w/v/43/e/v91+8v/53/S/o7/df+P/89b/pf0d/v/+P/47/Vf8d/e3+f/w7/lf/b+jv95/43/lf9b+iv99/53/nv9Z/S3++/57/nv+h/h39/f4H/lf+b+mv6O/3P/K/839df0d/v/+V/5v6G/r7/Vf+b+pv6e/3X/m/qb+jv99/5f5m/ob+fv+V+5v6W/r7/Vfub+pv6O/3X7m/qb+hv99/5f4m/ob+fv+V+Jv6W/r7/Vfib+pv6O/3X4m/qb+hv99/Jf4m/ob+fv+V+Jv6G/r7/Vfib+pv6O/3X4m/qb+hv99/Jf4m/ob+fv+V+Jv6G/r7/Vfib+pv6O/3X4m/qb+hv99/Jf4m/ob+fv+V+Jv6W/r7/Vfib+pv6O/3X4m/qb+hv99/Jf6m/ob+fv+V+pv6W/r7/Vfqb+pv6O/3X6m/qf+m/h39/f4H/W/67+mv6O/3/9J/1/9Gf7v/hv/V/1f+O/nb/P/57/lf9b+jv95/57/lf9T+iv99/43/nv9N/S3++/47/Vf8d/R3+/+4//Vf9T+gv99/5f61/lf6W/33/D/89f/pf0d/v/+P/63/S/o7/dff77+xf/3r3/c/f7/f5vL/Xp1//Pf776yECAAAAAAAAAAAAAAAAAAB+8gdvMR0hHlYimwAAAABJRU5ErkJggg==" alt="Logotipo UNIVESP"></div></header>
+        <main class="cert-body"><h2>Certificado de Conclusão</h2><p>Certificamos que</p><div id="cert-name-front" class="cert-name">Nome do Participante</div><p>concluiu com sucesso o curso de capacitação</p><p class="course-name">"Maximizando o Ensino de Matemática com a Matific"</p><p class="cert-subtitle">Curso ministrado pelos alunos do curso de Pedagogia da Univesp em complemento ao Projeto Integrador VI.</p></main>
+        <footer class="cert-signatures"><div class="signature-line"><p class="student-list">GABRIELA FERNANDA RODRIGUES, RA 2201948; GUSTAVO FIGUEIREDO, RA 2216953; JOSÉ GONÇALVES DE OLIVEIRA NETO, RA 2219074; LARISSA MARQUES DO NASCIMENTO, RA 2213322; MARCELO LUIS FELICIO, RA 2214704; TAIS DE TOLEDO BARROS AULER SALIBA, RA 2224808.</p><div class="line"></div><p><strong>DRP08-TPL 506 -SALA: 001 GRUPO: 011</strong></p></div><div class="signature-line"><p><strong>Washington Ricardo de Lima</strong></p><div class="line"></div><p>Orientador do Projeto</p></div></footer>
+    </div>
+    <div id="certificate-back" class="certificate-page">
+        <h2 class="cert-back-title">Detalhes da Formação</h2>
+        <div class="cert-modules"><strong>Conteúdo Programático Concluído:</strong><ul><li>Módulo 1: Fundamentos e Primeiros Passos na Matific</li><li>Módulo 2: Gerenciamento da Sala de Aula Digital</li><li>Módulo 3: Análise de Dados para uma Prática Pedagógica Eficaz</li><li>Módulo 4: Estratégias de Integração Curricular</li><li>Módulo 5: Projeto Aplicado e Planejamento Didático</li></ul></div>
+        <footer class="cert-footer-back"><div class="cert-details"><p>Emitido em: <span id="cert-date-back"></span></p><p>ID do Certificado: <span id="cert-id-back"></span></p></div></footer>
+    </div>
+    
+    <div id="requirements-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button" onclick="closeModal('requirements-modal')">&times;</span>
+        <h2>Requisitos do Sistema</h2>
+        <h3>Navegadores Recomendados:</h3>
+        <ul><li>Google Chrome (versão mais recente)</li><li>Mozilla Firefox (versão mais recente)</li><li>Microsoft Edge (versão mais recente)</li></ul>
+        <h3>Dispositivos:</h3><p>A plataforma é compatível com computadores (desktop e laptop), tablets e smartphones. É necessária uma conexão estável com a internet.</p>
+      </div>
+    </div>
+    <div id="modal-mod1" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('modal-mod1')">&times;</span>
+            <h2>Conteúdo de Leitura: Módulo 1</h2>
+            <div class="modal-text-content">
+                <h3>Introdução</h3>
+                <p>O ensino da matemática, no século XXI, enfrenta um paradoxo: enquanto a sociedade se torna cada vez mais dependente de habilidades lógicas e quantitativas, as salas de aula ainda lutam contra a apatia, a ansiedade e a percepção de que a matemática é uma disciplina para poucos. O modelo tradicional de ensino, centrado na transmissão de fórmulas e na resolução mecanizada de exercícios, muitas vezes falha em criar conexões significativas com o universo do aluno e em respeitar as diferentes trilhas de aprendizagem presentes em uma mesma turma. O resultado é um cenário preocupante, onde a dificuldade em matemática é frequentemente naturalizada, e o potencial de muitos estudantes é subestimado ou perdido. Diante deste quadro, a comunidade educacional busca, incessantemente, por abordagens pedagógicas que possam revitalizar esta área do conhecimento, tornando-a mais acessível, engajadora e, acima de tudo, significativa. A tecnologia digital surge, neste contexto, não como uma panaceia, mas como uma poderosa aliada, capaz de oferecer recursos e possibilidades antes inimagináveis. Contudo, a mera inserção de dispositivos digitais em sala de aula não garante, por si só, uma transformação pedagógica. O uso eficaz da tecnologia depende de sua intencionalidade e de sua ancoragem em princípios de aprendizagem sólidos. Uma ferramenta digital só se torna verdadeiramente transformadora quando é concebida e utilizada com base em uma profunda compreensão de como os seres humanos aprendem. É a partir desta premissa que este capítulo se propõe a explorar três pilares fundamentais para a construção de uma aprendizagem matemática de qualidade na era digital, utilizando como estudo de caso a plataforma Matific. Analisaremos como a intersecção entre (1) a Gamificação como estratégia de engajamento, (II) o rigoroso Alinhamento com a Base Nacional Comum Curricular (BNCC) como garantia de pertinência, e (III) a jornada cognitiva Do Concreto ao Abstrato como método para a construção de conceitos, pode criar um ecossistema de aprendizagem robusto e eficaz. Ao desvendar a arquitetura pedagógica por trás de uma ferramenta como a Matific, buscamos oferecer ao educador não apenas um tutorial, mas uma reflexão aprofundada sobre os princípios que podem nortear uma prática docente inovadora e impactante.</p>
+                <h3>Parte I: Gamificação como Ferramenta de Engajamento e Aprendizagem</h3>
+                <p>A palavra "gamificação" tornou-se onipresente no vocabulário corporativo e educacional, mas seu significado é frequentemente simplificado ou mal interpretado. Reduzi-la à mera inclusão de "jogos" em sala de aula ou à simples atribuição de pontos e medalhas é subestimar seu potencial e ignorar a complexa ciência do comportamento humano que a fundamenta.</p>
+                <h4>1.1. Definindo e Diferenciando: Gamificação vs. Aprendizagem Baseada em Jogos</h4>
+                <p>A Aprendizagem Baseada em Jogos (GBL - Game-Based Learning) refere-se ao uso de jogos completos, com início, meio e fim, como principal veículo para o ensino. A Gamificação, por outro lado, é "o uso de mecânicas, estéticas e pensamento baseados em jogos para engajar pessoas, motivar a ação, promover a aprendizagem e resolver problemas". Em outras palavras, a gamificação não utiliza um jogo inteiro, mas extrai os elementos que tornam os jogos tão cativantes e os aplica a um contexto que não é um jogo.</p>
+                <h4>1.2. A Anatomia da Gamificação: Os Elementos Essenciais</h4>
+                <ul>
+                    <li><strong>Progressão e Desafios Graduais:</strong> Uma aplicação direta do conceito de "andaime" (scaffolding) de Jerome Bruner, e dialoga com a Zona de Desenvolvimento Proximal (ZPD) de Vygotsky.</li>
+                    <li><strong>Feedback Imediato e Construtivo:</strong> O ciclo rápido de "ação-consequência-correção" é extremamente poderoso para a aprendizagem. O erro não é punitivo, mas informativo, o que ajuda a construir uma mentalidade de crescimento (growth mindset).</li>
+                    <li><strong>Narrativa e Contexto:</strong> Atribuir uma tarefa abstrata como "resolver 10 equações" é muito menos motivador do que "ajude o monstrinho a construir uma ponte...".</li>
+                    <li><strong>Autonomia e Agência:</strong> Oferecer ao jogador um grau de liberdade e escolha, o que atende à Teoria da Autodeterminação.</li>
+                    <li><strong>Recompensas e Reconhecimento:</strong> Pontos, estrelas e medalhas servem como representações visuais do progresso e da conquista.</li>
+                </ul>
+                <h4>1.3. A Psicologia por Trás do Engajamento: Por que a Gamificação Funciona?</h4>
+                <p>A eficácia da gamificação está enraizada em teorias da psicologia da motivação, como a <strong>Teoria da Autodeterminação (SDT)</strong>, que postula a necessidade de Autonomia, Competência e Pertencimento, e o <strong>Estado de Flow</strong>, um estado de imersão total em uma atividade quando o desafio e a habilidade estão em equilíbrio.</p>
+                <h3>Parte II: O Pilar da Pertinência Curricular: O Alinhamento com a BNCC</h3>
+                <p>A Base Nacional Comum Curricular (BNCC) foca no desenvolvimento de competências, enfatizando o letramento matemático. A Competência Geral 5 estabelece que o aluno deve ser capaz de "Compreender, utilizar e criar tecnologias digitais...". Ferramentas como a Matific fazem o mapeamento curricular, correlacionando cada atividade com as habilidades específicas da BNCC, o que facilita o planejamento do professor e a geração de relatórios de desempenho focados.</p>
+                <h3>Parte III: A Jornada Cognitiva: Do Concreto ao Abstrato</h3>
+                <p>A aprendizagem significativa progride do concreto para o abstrato, uma ideia consolidada por teóricos como Jean Piaget e Jerome Bruner. Isso deu origem à metodologia C-P-A (Concreto-Pictórico-Abstrato):</p>
+                <ol>
+                    <li><strong>Concreto:</strong> Os alunos primeiro exploram um conceito usando objetos físicos e manipuláveis.</li>
+                    <li><strong>Pictórico:</strong> Em seguida, aprendem a representar o conceito por meio de desenhos ou modelos visuais.</li>
+                    <li><strong>Abstrato:</strong> Apenas após dominarem as fases anteriores, são introduzidos aos números e símbolos abstratos.</li>
+                </ol>
+                <p>Uma plataforma digital como a Matific potencializa essa abordagem ao oferecer "manipuláveis virtuais" interativos, como cortar uma pizza para aprender frações ou preencher uma forma com quadrados para entender a área, criando uma ponte eficaz entre a experiência concreta e a linguagem simbólica da matemática.</p>
+                <h3>Conclusão</h3>
+                <p>A superação dos desafios no ensino da matemática exige uma abordagem que combine a ciência da motivação (Gamificação), um planejamento rigoroso (Alinhamento com a BNCC) e uma metodologia que respeite o desenvolvimento cognitivo (Do Concreto ao Abstrato). Ao dominar não apenas o "como" operar uma ferramenta, mas o "porquê" de sua eficácia, o professor se torna um arquiteto de experiências de aprendizagem.</p>
+            </div>
+        </div>
+    </div>
+    <div id="modal-mod2" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('modal-mod2')">&times;</span>
+            <h2>Conteúdo de Leitura: Módulo 2</h2>
+            <div class="modal-text-content">
+                <h3>Introdução</h3>
+                <p>A dificuldade no ensino digital não reside mais na escassez de material, mas na sua superabundância. Nesse cenário, emerge a competência do professor como curador: a habilidade de filtrar, selecionar, contextualizar e sequenciar recursos. Este capítulo investiga essa transformação, argumentando que a gestão eficaz da sala de aula digital está ligada à curadoria pedagógica e se sustenta em três domínios: a redefinição do papel do professor, o desenvolvimento de uma metodologia de curadoria e a aplicação desses recursos para o ensino diferenciado.</p>
+                <h3>Parte I: Redefinindo a Sala de Aula: Gestão e Mediação em Ambientes Digitais</h3>
+                <p>A integração de tecnologias cria um "terceiro espaço" de aprendizagem. O papel do professor evolui de expositor de conteúdo para arquiteto de ecossistemas de aprendizagem, assumindo funções de mediador, curador e designer de experiências. A gestão da sala de aula digital requer:</p>
+                <ul>
+                    <li><strong>Estabelecimento de Rotinas Digitais Claras:</strong> Protocolos consistentes para acesso, localização de tarefas, fluxo de trabalho e comunicação.</li>
+                    <li><strong>Gestão do Foco e da Atenção:</strong> Plataformas bem desenhadas criam um "loop de engajamento" que mantém o aluno imerso na tarefa.</li>
+                    <li><strong>Monitoramento e "Presença" Digital:</strong> Os painéis de controle do professor (dashboards) permitem ver o progresso em tempo real, replicando o ato de "circular pela sala" e permitindo intervenções proativas.</li>
+                </ul>
+                <h3>Parte II: O Professor como Curador: Navegando na Biblioteca de Recursos Pedagógicos</h3>
+                <p>Muitos jogos online carecem de rigor pedagógico. O professor precisa de um framework para avaliar a qualidade de um recurso digital. Critérios essenciais incluem:</p>
+                <ol>
+                    <li><strong>Alinhamento Curricular e Relevância Pedagógica:</strong> O recurso está alinhado à BNCC e aos objetivos da aula?</li>
+                    <li><strong>Solidez da Abordagem de Ensino:</strong> Promove a construção do conhecimento (construtivismo) ou a mera repetição?</li>
+                    <li><strong>Qualidade do Engajamento e Motivação:</strong> A gamificação é significativa e ligada à maestria do conteúdo?</li>
+                    <li><strong>Usabilidade e Design da Interface (UI/UX):</strong> A plataforma é intuitiva e livre de distrações?</li>
+                    <li><strong>Potencial para Personalização e Diferenciação:</strong> O recurso permite diferentes trilhas de aprendizagem?</li>
+                </ol>
+                <p>A biblioteca da Matific é projetada para a curadoria, permitindo filtrar atividades pelo ano escolar, unidade temática e pelo código exato da habilidade da BNCC, facilitando um planejamento preciso.</p>
+                <h3>Parte III: Da Curadoria à Ação: Gerenciamento de Atividades para o Ensino Diferenciado</h3>
+                <p>O ensino diferenciado, popularizado por Carol Ann Tomlinson, busca oferecer diferentes caminhos para que todos os alunos alcancem os mesmos objetivos, ajustando conteúdo, processo, produto e ambiente de aprendizagem. A tecnologia é uma catalisadora para essa abordagem. Na Matific, a ferramenta de "Gerenciamento de Grupos" é o principal recurso para isso, permitindo ao professor:</p>
+                <ol>
+                    <li>Criar grupos flexíveis com base na prontidão dos alunos (ex: Reforço, Na Média, Desafio).</li>
+                    <li>Realizar a curadoria de atividades específicas para o nível de cada grupo.</li>
+                    <li>Atribuir as atividades de forma direcionada para cada grupo correspondente.</li>
+                </ol>
+                <p>Isso resulta em uma aula de matemática altamente diferenciada, onde a complexidade logística, que seria exaustiva com materiais físicos, é simplificada pela plataforma, liberando o tempo do professor para a mediação da aprendizagem.</p>
+            </div>
+        </div>
+    </div>
+    <div id="modal-mod3" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('modal-mod3')">&times;</span>
+            <h2>Conteúdo de Leitura: Módulo 3</h2>
+            <div class="modal-text-content">
+                <h3>Introdução</h3>
+                <p>A avaliação tradicional (somativa) pode ser comparada a uma autópsia: diz o que aconteceu no final, mas oferece poucas informações para intervir durante o processo. Em contrapartida, a avaliação formativa é um processo contínuo cujo objetivo não é julgar, mas coletar evidências para ajustar a prática pedagógica em tempo real. As tecnologias digitais são coletoras de dados incansáveis, mas o desafio está em transformar esses dados em informação e ação. Este capítulo investiga como o uso do Learning Analytics, por meio dos relatórios da Matific, capacita o professor a praticar uma pedagogia orientada por dados.</p>
+                <h3>Parte I: O Paradigma da Pedagogia Orientada por Dados</h3>
+                <p>A mudança fundamental é da <strong>avaliação da aprendizagem (somativa)</strong>, que ocorre no final e visa certificar, para a <strong>avaliação para a aprendizagem (formativa)</strong>, que ocorre durante o processo e visa diagnosticar e informar os próximos passos. O campo do Learning Analytics, definido como "a medição, coleta, análise e relato de dados sobre os aprendizes com o propósito de compreender e otimizar a aprendizagem", segue um ciclo: Coleta de Dados -> Análise e Visualização -> Geração de Insight -> Ação Pedagógica. Essa abordagem permite um feedback específico, tempestivo e acionável, que, segundo pesquisas de John Hattie, tem um dos maiores impactos no desempenho dos alunos.</p>
+                <h3>Parte II: Desvendando os Relatórios da Matific: Uma Análise Prática e Funcional</h3>
+                <p>Os relatórios da Matific são como lentes com diferentes níveis de zoom para investigar a aprendizagem:</p>
+                <ul>
+                    <li><strong>O Relatório de Desempenho (O Voo Panorâmico):</strong> É o "radar" da turma. Mostra métricas agregadas, como a média de acertos e uma lista de alunos organizada por desempenho, destacando com cores quem precisa de atenção. Responde: "Quais alunos precisam de uma intervenção imediata?".</li>
+                    <li><strong>O Relatório de Progresso por Habilidade (BNCC) (O Mapa do Currículo):</strong> Desagrega o desempenho por cada habilidade específica da BNCC. Em vez de uma nota geral de "Multiplicação", mostra o desempenho em "fatos básicos" separado de "problemas de multiplicação". Responde: "A dificuldade está no conceito fundamental ou na sua aplicação?".</li>
+                    <li><strong>O Relatório Detalhado por Aluno (O Microscópio):</strong> Oferece uma visão granular, exibindo cada questão, a resposta do aluno, o número de tentativas e o tempo gasto. Permite inferir o processo de pensamento do estudante. Responde: "O erro de João é conceitual, por desatenção ou desengajamento?".</li>
+                </ul>
+                <h3>Parte III: Da Análise à Ação Pedagógica: O Ciclo de Intervenção</h3>
+                <p>A análise de dados só tem valor se culminar em uma ação pedagógica, seguindo um ciclo virtuoso: Planejamento -> Coleta de Dados -> Análise/Diagnóstico -> Ação/Intervenção -> Reavaliação. Com base nos diagnósticos dos relatórios, o professor pode planejar ações para a turma toda (revisão coletiva), para pequenos grupos (atividades de reforço direcionadas) e individuais (dar um feedback específico, conversar sobre motivação). É imperativo usar os dados de forma ética, para compreender e apoiar, e nunca para rotular ou estigmatizar os alunos.</p>
+            </div>
+        </div>
+    </div>
+    <div id="modal-mod4" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('modal-mod4')">&times;</span>
+            <h2>Conteúdo de Leitura: Módulo 4</h2>
+            <div class="modal-text-content">
+                <h3>Introdução</h3>
+                <p>A maturidade pedagógico-tecnológica é alcançada quando a pergunta do professor muda de "qual ferramenta usar?" para "Como redesenhar minha aula para que a tecnologia gere o máximo impacto na aprendizagem?". Este capítulo explora estratégias de integração curricular com foco nos modelos de ensino híbrido, que combinam de forma intencional os pontos fortes do ensino presencial com as potencialidades do aprendizado online.</p>
+                <h3>Parte I: Fundamentos do Ensino Híbrido (Blended Learning)</h3>
+                <p>Segundo Horn e Stacker (2015), o ensino híbrido é um programa de educação formal no qual um aluno aprende, em parte, por meio do ensino online (com algum controle do estudante sobre o tempo, lugar ou ritmo) e, em parte, em um local físico supervisionado. A tecnologia assume tarefas como a instrução direta e a coleta de dados, liberando o professor para se dedicar à mediação de discussões e ao apoio socioemocional.</p>
+                <h4>1. Modelo de Rotação por Estações (Station Rotation)</h4>
+                <p>É a porta de entrada mais acessível para o ensino híbrido. A sala é dividida em várias "estações", e os alunos, em pequenos grupos, rotacionam entre elas. Pelo menos uma estação é de aprendizado online.</p>
+                <p><strong>Exemplo de uma Aula por Estações:</strong></p>
+                <ul>
+                    <li><strong>Estação Online (com a Matific):</strong> Um grupo de alunos utiliza os tablets para praticar a multiplicação de forma individualizada.</li>
+                    <li><strong>Estação com o Professor:</strong> Aqui reside o superpoder deste modelo. O professor reúne um pequeno grupo (identificado nos relatórios) para uma intervenção direta e personalizada.</li>
+                    <li><strong>Estação Colaborativa (Offline):</strong> Outro grupo trabalha em duplas para resolver um problema de desafio no caderno.</li>
+                    <li><strong>Estação de Prática Independente (Offline):</strong> O último grupo trabalha individualmente em uma folha de atividades.</li>
+                </ul>
+                <p><strong>Vantagens:</strong> Viabiliza a diferenciação, resolve o problema de recursos limitados, dinamiza a aula e potencializa o papel do professor como mediador.</p>
+                <h4>2. Modelo de Sala de Aula Invertida (Flipped Classroom)</h4>
+                <p>Este modelo inverte a lógica tradicional. O aluno tem o primeiro contato com o conteúdo em casa (via vídeo ou uma atividade da Matific), e o tempo de aula presencial é usado para a "lição de casa": resolução de problemas, projetos e atendimento de dúvidas. O tempo com o professor é otimizado para atividades cognitivamente mais complexas.</p>
+                <p><strong>Vantagens:</strong> Otimização do tempo presencial, personalização do ritmo do aluno e consolida o papel do professor como mentor.</p>
+                <h3>Parte II: A Cultura da Resiliência Pedagógica: A Importância do "Plano B"</h3>
+                <p>Integrar tecnologia envolve imprevistos (internet cai, tablet não carrega). A habilidade de ter um "Plano B" — uma atividade de aprendizagem significativa e "desplugada" — não é pessimismo, mas profissionalismo. Ter um Plano B bem estruturado transforma o professor de uma figura "frágil" (dependente da tecnologia) em uma figura "antifrágil" (que consegue extrair uma boa aula de qualquer situação).</p>
+            </div>
+        </div>
+    </div>
+    <div id="modal-mod5" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('modal-mod5')">&times;</span>
+            <h2>Conteúdo de Leitura: Módulo 5</h2>
+            <div class="modal-text-content">
+                <h3>Introdução</h3>
+                <p>A prática docente é, em sua essência, um ato de design. Longe de ser um mero executor de currículos, o professor atua como um arquiteto de experiências. Este capítulo final consolida a jornada do curso, focando na construção de uma sequência didática. Argumentamos que um planejamento eficaz para ambientes híbridos é um exercício de "planejamento reverso" (backward design): parte-se dos objetivos de aprendizagem para então selecionar as evidências de avaliação e, por fim, desenhar as experiências.</p>
+                <h3>Parte I: A Sequência Didática como um Ato de Design Instrucional</h3>
+                <p>Uma sequência didática, como definida por Zabala (1998), é "um conjunto ordenado de atividades estruturadas e articuladas para a realização de certos objetivos educacionais". É um percurso de aprendizagem com começo, meio e fim. Ao construí-la, você mobilizará todo o conhecimento adquirido nos módulos anteriores: os princípios da gamificação, as competências de curadoria, os insights da análise de dados e as estratégias de integração.</p>
+                <h3>Parte II: A Arquitetura de um Plano de Aula para o Ensino Híbrido</h3>
+                <p>Um plano de aula eficaz é um documento claro, conciso e útil. Seus componentes essenciais são:</p>
+                <ol>
+                    <li><strong>Identificação:</strong> Título da sequência, componente curricular, ano de escolaridade e duração.</li>
+                    <li><strong>Objetivos de Aprendizagem:</strong> O ponto de partida. O que se espera que o aluno saiba ou seja capaz de fazer? Use verbos de ação observáveis (Identificar, Comparar, Analisar, Resolver).</li>
+                    <li><strong>Habilidades da BNCC:</strong> Liste os códigos da(s) habilidade(s) para garantir o alinhamento curricular.</li>
+                    <li><strong>Recursos e Materiais:</strong> Detalhe tudo o que será necessário, separando em categorias: Digitais, Impressos, Manipuláveis e Tecnológicos.</li>
+                    <li><strong>Sequência Didática Detalhada (Passo a Passo):</strong> O coração do plano. Descreva o percurso da aula. Uma boa abordagem é usar um modelo como o 5E (Engajar, Explorar, Explicar, Elaborar, Avaliar).</li>
+                    <li><strong>Estratégias de Diferenciação:</strong> Descreva como você atenderá aos diferentes níveis de prontidão dos alunos (ex: "O 'Grupo de Reforço' fará a atividade X, enquanto o 'Grupo de Desafio' trabalhará com a atividade Y.").</li>
+                    <li><strong>Avaliação da Aprendizagem:</strong> Detalhe como os objetivos serão avaliados, combinando instrumentos de avaliação formativa (relatórios da Matific, observação) e somativa (se houver, como uma tarefa final).</li>
+                </ol>
+                <p>A <strong>Rubrica de Autoavaliação</strong> é uma ferramenta metacognitiva que torna explícitos os critérios de qualidade de um plano, permitindo que você reflita sobre seu próprio trabalho e identifique pontos de melhoria.</p>
+                <h3>Parte III: Dicas para um Projeto de Sucesso e Agradecimentos</h3>
+                <ul>
+                    <li><strong>Seja realista e relevante:</strong> Escolha um conteúdo que você realmente vai lecionar em breve.</li>
+                    <li><strong>Foque no Objetivo, Não na Ferramenta:</strong> A tecnologia é o meio, não o fim. A pergunta-chave é "qual atividade me ajuda a alcançar meu objetivo?".</li>
+                    <li><strong>Detalhe o seu Papel:</strong> Descreva também o que você, professor, fará: circulará, mediará, trabalhará com um pequeno grupo?</li>
+                    <li><strong>Permita-se experimentar:</strong> O plano de aula é um guia, uma hipótese. Esteja aberto para ajustá-lo com base na resposta dos seus alunos.</li>
+                </ul>
+                <p>A conclusão deste curso não é um ponto final, mas um ponto de partida. Encorajamos você a continuar explorando, a experimentar e a compartilhar suas descobertas com seus colegas.</p>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // Inicia o objeto global jspdf
+    const { jsPDF } = window.jspdf;
+
+    // --- LÓGICA DE NAVEGAÇÃO ---
+    function showModule(moduleId, navElement) {
+        if (navElement.classList.contains('disabled')) return;
+        document.querySelectorAll('.module').forEach(module => module.classList.remove('active'));
+        document.querySelectorAll('.sidebar li a').forEach(link => link.classList.remove('active'));
+        document.getElementById(moduleId).classList.add('active');
+        navElement.classList.add('active');
+        document.getElementById('mainContent').scrollTop = 0; 
+    }
+
+    // --- BANCO DE DADOS DOS QUIZZES ---
+    const quizzes = {
+        mod1: { questions: [ { question: "O principal objetivo da gamificação na Matific é:", options: ["Substituir o professor", "Aumentar a motivação e o engajamento dos alunos", "Apenas divertir os alunos sem foco no conteúdo"], answer: 1 }, { question: "O primeiro passo para adicionar seus alunos na plataforma é:", options: ["Criar uma turma", "Atribuir uma atividade", "Gerar relatórios"], answer: 0 }, { question: "O conteúdo das atividades da Matific é baseado em:", options: ["Um currículo internacional genérico", "Jogos populares da internet", "Habilidades da Base Nacional Comum Curricular (BNCC)"], answer: 2 }, { question: "Qual das seguintes é uma 'Boa Prática' para o primeiro acesso dos alunos?", options: ["Deixar que os alunos descubram a senha sozinhos", "Fazer o primeiro login todos juntos em sala", "Proibir o uso da plataforma em casa"], answer: 1 } ] },
+        mod2: { questions: [ { question: "Para encontrar uma atividade específica para a habilidade (EF04MA05), qual filtro você deve usar?", options: ["Filtro de Tópico", "Filtro da BNCC", "Filtro de Ano Escolar"], answer: 1 }, { question: "Uma professora quer que apenas 3 alunos refaçam uma atividade. Ela deve atribuir a tarefa para:", options: ["A turma toda", "Um grupo criado com esses 3 alunos", "A Ilha da Aventura"], answer: 1 }, { question: "O que é fundamental fazer antes de atribuir uma atividade para a turma?", options: ["Verificar se a atividade é colorida", "Jogar a atividade para conhecer seu funcionamento e objetivo", "Perguntar aos alunos se eles gostam do tema"], answer: 1 }, { question: "A diferença entre 'Trabalho de Casa' e 'Trabalho de Classe' serve para:", options: ["Dar notas diferentes para os alunos", "Organizar o fluxo de trabalho e os relatórios do professor", "Bloquear o acesso dos alunos fora da escola"], answer: 1 } ] },
+        mod3: { questions: [ { question: "Qual relatório oferece a visão mais detalhada sobre as tentativas e erros de um único aluno?", options: ["Relatório de Desempenho", "Relatório de Progresso por Habilidade", "Relatório Detalhado por Aluno"], answer: 2 }, { question: "A análise de dados serve principalmente para:", options: ["Classificar os alunos do melhor para o pior", "Planejar intervenções pedagógicas com base em evidências", "Aumentar a quantidade de tarefas"], answer: 1 }, { question: "Um professor nota que a turma inteira teve baixo desempenho em uma habilidade específica. Qual relatório é o mais indicado para confirmar essa tendência?", options: ["Relatório de Progresso por Habilidade", "Relatório Detalhado de um único aluno", "A lista de alunos da turma"], answer: 0 }, { question: "Se um relatório mostra que um aluno acertou uma atividade, mas após 5 tentativas, isso pode indicar:", options: ["Que o aluno é muito rápido", "Que o aluno está 'chutando' ou com dificuldade no conceito", "Que a plataforma está com erro"], answer: 1 } ] },
+        mod4: { questions: [ { question: "Um professor tem poucos computadores e quer trabalhar com pequenos grupos. Qual modelo é o mais indicado?", options: ["Sala de Aula Invertida", "Rotação por Estações", "Aula expositiva tradicional"], answer: 1 }, { question: "O objetivo principal do modelo de Sala de Aula Invertida é:", options: ["Aumentar a quantidade de lição de casa", "Otimizar o tempo em sala para atividades práticas e aprofundamento", "Usar a tecnologia apenas por diversão"], answer: 1 }, { question: "Na Rotação por Estações, o que o professor geralmente faz enquanto um grupo está na estação de tecnologia?", options: ["Prepara a próxima aula", "Realiza uma intervenção focada com outro pequeno grupo", "Descansa"], answer: 1 }, { question: "Qual modelo exige que o aluno tenha acesso à internet em casa para funcionar plenamente?", options: ["Rotação por Estações", "Sala de Aula Invertida", "Uso em laboratório de informática"], answer: 1 } ] }
+    };
+
+    // --- LÓGICA DO QUIZ E PROGRESSÃO ---
+    function buildQuiz(moduleId) { 
+        const quizData = quizzes[moduleId]; 
+        if (!quizData) return; 
+        const quizContainer = document.getElementById('quiz-' + moduleId); 
+        let html = ''; 
+        quizData.questions.forEach((q, index) => { 
+            html += `<div class="question-wrapper"><div class="question">${index + 1}. ${q.question}</div>`; 
+            html += `<div class="options">`; 
+            q.options.forEach((option, i) => { 
+                html += `<div><input type="radio" name="q${moduleId}_${index}" value="${i}"> ${option}</div>`; 
+            }); 
+            html += `</div></div>`; 
+        }); 
+        quizContainer.innerHTML = html; 
+    }
+
+    function checkQuiz(moduleId) {
+        const quizData = quizzes[moduleId];
+        const feedbackContainer = document.getElementById('quiz-feedback-' + moduleId);
+        let score = 0;
+        quizData.questions.forEach((q, index) => {
+            const wrapper = document.querySelector(`input[name="q${moduleId}_${index}"]`).closest('.question-wrapper');
+            const selected = document.querySelector(`input[name="q${moduleId}_${index}"]:checked`);
+            wrapper.classList.remove('question-correct', 'question-incorrect');
+            if (selected) {
+                if (parseInt(selected.value) === q.answer) {
+                    score++;
+                    wrapper.classList.add('question-correct');
+                } else {
+                    wrapper.classList.add('question-incorrect');
+                }
+            } else {
+                wrapper.classList.add('question-incorrect');
+            }
+        });
+        const total = quizData.questions.length;
+        const percentage = (score / total) * 100;
+        
+        if (percentage >= 50) {
+            const nextModuleNumber = parseInt(moduleId.replace('mod', '')) + 1;
+            feedbackContainer.className = 'quiz-feedback correct';
+            feedbackContainer.innerHTML = `Você acertou ${score} de ${total} (${percentage.toFixed(0)}%). Parabéns! O próximo módulo foi desbloqueado.`;
+            
+            if (nextModuleNumber <= 5) {
+                feedbackContainer.innerHTML += `<br><button onclick="document.getElementById('nav-mod${nextModuleNumber}').click()">Ir para o Módulo ${nextModuleNumber}</button>`;
+            }
+            unlockNextModule(moduleId);
+        } else {
+            feedbackContainer.className = 'quiz-feedback incorrect';
+            feedbackContainer.innerHTML = `Você acertou ${score} de ${total} (${percentage.toFixed(0)}%). Para desbloquear o próximo módulo, você precisa de no mínimo 50% de acerto. Tente novamente!`;
+        }
+        feedbackContainer.style.display = 'block';
+    }
+    
+    function unlockNextModule(completedModuleId) {
+        const moduleNumber = parseInt(completedModuleId.replace('mod', ''));
+        const nextModuleNumber = moduleNumber + 1;
+        const nextModuleNavId = 'nav-mod' + nextModuleNumber;
+        const nextModuleLink = document.getElementById(nextModuleNavId);
+        if (nextModuleLink && nextModuleLink.classList.contains('disabled')) {
+            nextModuleLink.classList.remove('disabled');
+            nextModuleLink.style.pointerEvents = 'auto';
+            nextModuleLink.innerHTML = nextModuleLink.innerHTML.replace('<span>🔒</span>', '<span>✔️</span>');
+            localStorage.setItem(nextModuleNavId, 'unlocked');
+        }
+        updateProgressBar();
+    }
+
+    // --- LÓGICA DA BARRA DE PROGRESSO ---
+    function updateProgressBar() {
+        const totalModules = 5;
+        // Conta quantos módulos NÃO estão desabilitados
+        let unlockedCount = 0;
+        document.querySelectorAll('.sidebar a[id^="nav-mod"]').forEach(link => {
+            if (!link.classList.contains('disabled')) {
+                unlockedCount++;
+            }
+        });
+        const completedCount = Math.max(0, unlockedCount - 1);
+        const percentage = (completedCount / totalModules) * 100;
+        document.getElementById('progressBar').style.width = percentage + '%';
+        document.getElementById('progressLabel').innerText = `${percentage.toFixed(0)}% Concluído`;
+    }
+
+    // --- LÓGICA PARA LIMPAR PROGRESSO ---
+    function resetProgress() {
+        if (confirm('Tem certeza de que deseja limpar todo o seu progresso? Esta ação não pode ser desfeita.')) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
+    // --- LÓGICA DO FAQ, CERTIFICADO E MODAIS ---
+    function setupFaqAccordion() {
+        const questions = document.querySelectorAll(".faq-question");
+        questions.forEach(question => {
+            question.addEventListener("click", function() {
+                this.classList.toggle("active");
+                const answer = this.nextElementSibling;
+                if (answer.style.maxHeight) { answer.style.maxHeight = null; } else { answer.style.maxHeight = answer.scrollHeight + "px"; } 
+            });
+        });
+    }
+
+    function generateCertificate() {
+        const name = document.getElementById('student-name').value;
+        const feedback = document.getElementById('certificate-feedback');
+        if (!name.trim() || name.trim().length < 3) {
+            feedback.innerText = "Por favor, digite seu nome completo.";
+            feedback.style.color = "red";
+            return;
+        }
+        feedback.innerText = "Gerando seu PDF de 2 páginas, aguarde...";
+        feedback.style.color = "blue";
+        document.getElementById('cert-name-front').innerText = name;
+        const currentDate = new Date().toLocaleDateString('pt-BR');
+        document.getElementById('cert-date-back').innerText = currentDate;
+        const certId = 'CERT-' + Date.now();
+        document.getElementById('cert-id-back').innerText = certId;
+        const certFront = document.getElementById('certificate-front');
+        const certBack = document.getElementById('certificate-back');
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'px', format: 'a4' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        html2canvas(certFront, { scale: 3, useCORS: true }).then(canvasFront => {
+            const imgDataFront = canvasFront.toDataURL('image/png');
+            doc.addImage(imgDataFront, 'PNG', 0, 0, pageWidth, pageHeight);
+            doc.addPage();
+            return html2canvas(certBack, { scale: 3 });
+        }).then(canvasBack => {
+            const imgDataBack = canvasBack.toDataURL('image/png');
+            doc.addImage(imgDataBack, 'PNG', 0, 0, pageWidth, pageHeight);
+            doc.save(`Certificado-Matific-${name.trim()}.pdf`);
+            feedback.innerText = "Seu certificado de 2 páginas foi baixado com sucesso!";
+            feedback.style.color = "green";
+        }).catch(err => {
+            feedback.innerText = "Ocorreu um erro ao gerar o certificado. Tente novamente.";
+            feedback.style.color = "red";
+            console.error("Erro no html2canvas:", err);
+        });
+    }
+
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = 'block';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+    
+    // --- INICIALIZAÇÃO ---
+    document.addEventListener('DOMContentLoaded', () => {
+        buildQuiz('mod1');
+        buildQuiz('mod2');
+        buildQuiz('mod3');
+        buildQuiz('mod4');
+        setupFaqAccordion();
+
+        const sidebarLinks = document.querySelectorAll('.sidebar li a[id^="nav-mod"]');
+        sidebarLinks.forEach(link => {
+            if (localStorage.getItem(link.id) === 'unlocked') {
+                link.classList.remove('disabled');
+                link.style.pointerEvents = 'auto';
+                link.innerHTML = link.innerHTML.replace('<span>🔒</span>', '<span>✔️</span>');
+            }
+        });
+
+        updateProgressBar();
+
+        document.getElementById('req-button').addEventListener('click', () => openModal('requirements-modal'));
+        document.getElementById('reset-progress').addEventListener('click', resetProgress);
+    });
+
+    window.onclick = function(event) {
+        const modals = ['requirements-modal', 'modal-mod1', 'modal-mod2', 'modal-mod3', 'modal-mod4', 'modal-mod5'];
+        modals.forEach(id => {
+            const modal = document.getElementById(id);
+            if (event.target == modal) {
+                closeModal(id);
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
